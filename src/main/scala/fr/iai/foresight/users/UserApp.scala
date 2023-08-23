@@ -7,6 +7,10 @@ import zio.json.*
 
 import java.util.UUID
 
+//import fr.iai.foresight.security.SecurityHelper.jwtDecode
+//import zio.http.HttpAppMiddleware.bearerAuth
+//@@ bearerAuth(jwtDecode(_).isDefined)
+
 object UserApp:
   val routes: Routes[UserRepo, Response] = Routes(
     Method.POST / "user" / "add" -> handler { userAdd },
