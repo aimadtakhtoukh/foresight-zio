@@ -6,10 +6,9 @@ import zio.http.*
 
 object Main extends ZIOAppDefault :
   override def run: ZIO[Environment with ZIOAppArgs with Scope, Throwable, ExitCode] =
-    val httpApps = UserApp()
     Server
       .serve(
-        httpApps.withDefaultErrorResponse
+        UserApp.routes
       )
       .provide(
         Server.defaultWithPort(8080),
