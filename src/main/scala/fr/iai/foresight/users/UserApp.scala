@@ -1,21 +1,19 @@
 package fr.iai.foresight.users
 
 import fr.iai.foresight.models.*
+import fr.iai.foresight.security.SecurityHelper.bearerAuthWithContext
 import zio.*
+import zio.http.Middleware.bearerAuth
 import zio.http.{Response, uuid as uuidParameter, *}
 import zio.json.*
 
 import java.util.UUID
 
-//import fr.iai.foresight.security.SecurityHelper.jwtDecode
-//import zio.http.HttpAppMiddleware.bearerAuth
-//@@ bearerAuth(jwtDecode(_).isDefined)
-
 object UserApp:
   val routes: Routes[UserRepo, Response] = Routes(
-    Method.POST / "user" / "add" -> handler { userAdd },
-    Method.GET / "user" / uuidParameter("id") -> handler { (id: UUID, req: Request) => userGet(id) },
-    Method.GET / "user" / "all" -> handler { userGetAll() },
+    Method.POST / "user" / "add" -> handler { userAdd } @@ bearerAuthWithContext,
+    Method.GET / "user" / uuidParameter("id") -> handler { (id: UUID, req: Request) => userGet(id) } @@ bearerAuthWithContext,
+    Method.GET / "user" / "all" -> handler { userGetAll() } @@ bearerAuthWithContext,
   )
 
   private def userAdd(req: Request): ZIO[UserRepo, Response, Response] =

@@ -1,7 +1,11 @@
 package fr.iai.foresight.security
 
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
+import zio.ZIO
+import zio.http.{Handler, HandlerAspect, Header, Headers, Request, Response}
+
 import java.time.Clock
+import scala.util.Try
 
 object SecurityHelper {
 
@@ -10,18 +14,25 @@ object SecurityHelper {
   // Secret Authentication key
   val SECRET_KEY = "secretKey"
 
-  // Helper to encode the JWT token
-  def jwtEncode(username: String): String = {
-    val json = s"""{"user": "${username}"}"""
-    val claim = JwtClaim {
-      json
-    }.issuedNow.expiresIn(300)
-    Jwt.encode(claim, SECRET_KEY, JwtAlgorithm.HS512)
+  def jwtEncode(username: String, key: String): String =
+    Jwt.encode(JwtClaim(subject = Some(username)).issuedNow.expiresIn(300), key, JwtAlgorithm.HS512)
+
+  def jwtDecode(token: String, key: String): Try[JwtClaim] = {
+    Jwt.decode(token, key, Seq(JwtAlgorithm.HS512))
   }
 
-  // Helper to decode the JWT token
-  def jwtDecode(token: String): Option[JwtClaim] = {
-    Jwt.decode(token, SECRET_KEY, Seq(JwtAlgorithm.HS512)).toOption
-  }
+  val bearerAuthWithContext: HandlerAspect[Any, String] =
+    HandlerAspect.interceptIncomingHandler(Handler.fromFunctionZIO[Request] { request =>
+      request.header(Header.Authorization) match {
+        case Some(Header.Authorization.Bearer(token)) =>
+          ZIO
+            .fromTry(jwtDecode(token.value.asString, SECRET_KEY))
+            .orElseFail(Response.badRequest("Invalid or expired token!"))
+            .flatMap(claim => ZIO.fromOption(claim.subject).orElseFail(Response.badRequest("Missing subject claim!")))
+            .map(u => (request, u))
+
+        case _ => ZIO.fail(Response.unauthorized.addHeaders(Headers(Header.WWWAuthenticate.Bearer(realm = "Access"))))
+      }
+    })
 
 }
