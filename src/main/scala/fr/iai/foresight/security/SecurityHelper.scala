@@ -7,7 +7,7 @@ import zio.http.{Handler, HandlerAspect, Header, Headers, Request, Response}
 import java.time.Clock
 import scala.util.Try
 
-object SecurityHelper {
+object SecurityHelper:
 
   implicit val clock: Clock = Clock.systemUTC
 
@@ -17,9 +17,8 @@ object SecurityHelper {
   def jwtEncode(username: String, key: String): String =
     Jwt.encode(JwtClaim(subject = Some(username)).issuedNow.expiresIn(300), key, JwtAlgorithm.HS512)
 
-  def jwtDecode(token: String, key: String): Try[JwtClaim] = {
+  def jwtDecode(token: String, key: String): Try[JwtClaim] =
     Jwt.decode(token, key, Seq(JwtAlgorithm.HS512))
-  }
 
   val bearerAuthWithContext: HandlerAspect[Any, String] =
     HandlerAspect.interceptIncomingHandler(Handler.fromFunctionZIO[Request] { request =>
@@ -34,5 +33,3 @@ object SecurityHelper {
         case _ => ZIO.fail(Response.unauthorized.addHeaders(Headers(Header.WWWAuthenticate.Bearer(realm = "Access"))))
       }
     })
-
-}

@@ -10,6 +10,12 @@ import zio.json.*
 import java.util.UUID
 
 object UserApp:
+
+  /*
+    val app: HttpApp[UserRepo, Nothing] =
+    (add ++ get ++ all) @@ bearerAuth(jwtDecode(_).isDefined)
+   */
+
   val routes: Routes[UserRepo, Response] = Routes(
     Method.POST / "user" / "add" -> handler { userAdd } @@ bearerAuthWithContext,
     Method.GET / "user" / uuidParameter("id") -> handler { (id: UUID, req: Request) => userGet(id) } @@ bearerAuthWithContext,
